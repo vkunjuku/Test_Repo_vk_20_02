@@ -1,0 +1,32 @@
+{
+  "basic-static-cluster": {
+    "new_cluster": {
+      "spark_version": "11.2.x-scala2.12",
+      "spark_conf": {
+        "spark.master": "local[*, 4]"
+      },
+      "spark_env_vars": {
+        "PYSPARK_PYTHON": "/databricks/python3/bin/python3"
+      },
+      "autoscale": {
+        "min_workers": 1,
+        "max_workers": 2
+      },
+      "num_workers": 1,
+      "node_type_id": "m4.large",
+      "driver_node_type_id": "m4.large",
+      "runtime_engine": "STANDARD",
+      "cluster_source": "UI",
+      "aws_attributes": {
+        "first_on_demand": 1,
+        "availability": "SPOT_WITH_FALLBACK",
+        "zone_id": "ap-southeast-2b",
+        "spot_bid_price_percent": 100,
+        "ebs_volume_type": "GENERAL_PURPOSE_SSD",
+        "ebs_volume_count": 1,
+        "ebs_volume_size": 100,
+        "instance_profile_arn": "arn:aws:iam::099423962904:instance-profile/instance-profile-databricks-shared-S3"
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+    "environments": {
+        "default": {
+            "profile": "DEFAULT",
+            "storage_type": "mlflow",
+            "properties": {
+                "workspace_directory": "/Shared/dbx/projects/dlt_pipelines_default_ws",
+                "artifact_location": "dbfs:/Shared/dbx/projects/dlt_pipelines_default_artf"
+            }
+        },
+        "training": {
+            "profile": "TRAINING",
+            "storage_type": "mlflow",
+            "properties": {
+                "workspace_directory": "/Shared/dbx/projects/dlt_pipelines_training_ws",
+                "artifact_location": "dbfs:/Shared/dbx/projects/dlt_pipelines_training_artf"
+            }
+        },
+        "demos": {
+            "profile": "DEMOS",
+            "storage_type": "mlflow",
+            "properties": {
+                "workspace_directory": "/Shared/dbx/projects/dlt_pipelines_demos_ws",
+                "artifact_location": "dbfs:/Shared/dbx/projects/dlt_pipelines_demos_artf"
+            }
+        }
+    },
+    "inplace_jinja_support": false
+}

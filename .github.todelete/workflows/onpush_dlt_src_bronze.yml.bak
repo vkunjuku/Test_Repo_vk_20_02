@@ -1,0 +1,142 @@
+name: dlt_src_bronze DEV
+
+on:
+  push:
+    branches:
+      - "dev"
+    paths:
+    #  - "dlt_src_bronze/**"
+
+jobs:
+  prep:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_TRAINING }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_TRAINING }}
+      #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions
+      #DBX_CLI_PROFILE: ${{ secrets.RUNENV }}
+
+    outputs:
+      dlt_src_bronze_id: ${{ steps.gen_pipeline.outputs.dlt_src_bronze_id }}
+      dlt_src_bronze_schedule: ${{ steps.gen_pipeline.outputs.dlt_src_bronze_schedule }}
+
+    steps:
+      - uses: actions/checkout@v1
+
+      #- name: Export environment variables for databricks connection
+      #  run: |
+      #    export DATABRICKS_HOST=${{ secrets.DATABRICKS_HOST_TRAINING }}
+      #    export DATABRICKS_TOKEN=${{ secrets.DATABRICKS_TOKEN_TRAINING }}
+
+      - name: Install pip
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Install dependencies and project in dev mode
+        run: |
+          pip install -e ".[local,test]"
+
+      #- name: Run unit tests
+      #  run: |
+      #    dbx execute --cluster-id=${{ secrets.DATABRICKS_CLUSTER_TRAINING }} dlt-pipelines --task=test1 --environment=training
+
+      - name: Refresh Databricks Repo with the latest commit in Github
+        id: repo_update
+        run: |
+          databricks repos update --path "/Repos/jason.nam@versent.com.au/dlt_bronze" --branch dev
+
+      - name: Copy notebooks to Databricks Workspaces
+        run: |
+          databricks workspace mkdirs /Shared/dlt_src_bronze/
+          databricks workspace import_dir -o dlt_src_bronze/notebooks/ /Shared/dlt_src_bronze/notebooks/
+          databricks fs cp -r --overwrite dlt_src_bronze/config/ dbfs:/dlt_src_bronze/config/
+          databricks fs cp -r --overwrite dlt_src_bronze/pipelines/ dbfs:/dlt_src_bronze/pipelines/
+
+      - name: Create DLT Pipeline
+        id: gen_pipeline
+        run: |
+        # databricks pipelines create --settings dlt_src_bronze/pipelines/dlt_src_bronze.json >> install.log
+        # cat install.log | sed -n -e 's/^.*ID: //p' | sed 's/.$//g'
+        # echo "dlt_src_bronze_id=$(cat install.log | sed -n -e 's/^.*ID: //p' | sed 's/.$//g')" >> $GITHUB_OUTPUT
+        ##### echo "dlt_src_bronze_id=$(databricks pipelines create --settings dlt_src_bronze/pipelines/dlt_src_bronze.json | sed -n -e 's/^.*ID: //p' | sed 's/.$//g')" >> $GITHUB_OUTPUT
+        # echo "dlt_src_bronze_schedule=$(date -u -d "+6min" +"00 %M %H %d %b ?")" >> $GITHUB_OUTPUT
+        ##### echo "pipelineid=12345-12345" >> $GITHUB_OUTPUT
+        ##### echo "::set-output name=pipelineid::12345-12345"
+        ##### echo "::set-output name=pipelineid::$(databricks pipelines create --settings pipelines/dlt_src_bronze.json | sed -n -e 's/^.*ID: //p' | sed 's/.$//g')"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: prep
+    strategy:
+      max-parallel: 4
+
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_TRAINING }}
+      DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_TRAINING }}
+      DLT_SRC_BRONZE_ID: ${{needs.prep.outputs.dlt_src_bronze_id}}
+      DLT_SRC_BRONZE_SCHEDULE: ${{needs.prep.outputs.dlt_src_bronze_schedule}}
+      #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions
+      #DBX_CLI_PROFILE: ${{ secrets.RUNENV }}
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Install pip
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Install dependencies and project in dev mode
+        run: |
+          pip install -e ".[local,test]"
+
+      - name: Stop Pipeline
+        run: |
+          databricks pipelines stop --pipeline-id $DLT_SRC_BRONZE_ID
+          sleep 10
+
+      - name: Workflow deployment
+        run: |
+          echo $DLT_SRC_BRONZE_ID
+        #  dbx deploy dlt-src-bronze2 --environment=training
+
+      #- name: Run the workflow
+      #  run: |
+      #    dbx launch dlt-pipelines-existing-cluster --trace --environment=training
+
+      # use below when deploy DLT@continious mode. Note: do not use dbx launch as DLT continous job never terminated so doesn't DBX lauch job
+      #- name: Workflow deployment
+      #  run: |
+      #    dbx deploy dlt-pipeline --environment=training
+
+      # Do not use below when deploy DLT@continious mode as DLT continous job never terminated so doesn't DBX lauch job
+      #- name: Run the workflow
+      #  run: |
+      #    dbx launch dlt-pipeline --trace --environment=training
+
+      # --assets-only (for deploy) --from-assets (for launch) options are for testing purpose
+      #- name: Workflow deployment (assets only upload)
+      #  run: |
+      #    dbx deploy dlt-pipeline --assets-only --environment=training
+
+      #- name: Run the workflow in a jobless fashion
+      #  run: |
+      #    dbx launch dlt-pipeline --from-assets --trace --environment=training
+
+      #- name: Workflow deployment (assets only upload)
+      #  run: |
+      #    dbx deploy dlt-pipelines-sample-multitask --assets-only --environment=training
+
+      #- name: Run the workflow in a jobless fashion
+      #  run: |
+      #    dbx launch dlt-pipelines-sample-multitask --from-assets --trace --environment=training
+
+      #- name: Copy notebooks to Databricks Workspaces
+      #  run: |
+      #    databricks workspace delete -r /Shared/${{ github.repository }}
+      #    databricks workspace import_dir ${{ github.workspace }}/notebooks/ /Shared/${{ github.repository }}
+      #- name: Copy notebooks to Databricks Workspaces
+      #  run: |
+      #    databricks workspace import_dir -o ${{ github.workspace }}/notebooks/ /Shared/${{ github.repository }}

@@ -1,0 +1,35 @@
+version: 0.2
+
+env:
+  secrets-manager:
+    DATABRICKS_HOST: "versent_databricks_env:databricks_host_training"
+    DATABRICKS_TOKEN: "versent_databricks_env_vk:versent_databricks_env_token_vk"
+
+phases:
+  install:
+    commands:
+      - curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+      - apt-get upgrade
+  pre_build:
+    commands:
+      - echo pre_build completed on `date`
+      - python -m pip install --upgrade pip
+      - pip install -r requirements.txt
+  build:
+    commands:
+       #- databricks repos update --path "/Repos/varishtaja.kunjukuttan@versent.com.au/dlt_bronze_vk" --branch dev
+       - databricks workspace mkdirs /Shared/dlt_src_bronze_vk/
+       - databricks workspace ls
+       - databricks workspace import_dir -o dlt_src_bronze/notebooks/ /Shared/dlt_src_bronze_vk/notebooks/
+       - databricks fs cp -r --overwrite dlt_src_bronze/config/ dbfs:/dlt_src_bronze_vk/config/
+       - databricks fs cp -r --overwrite dlt_src_bronze/pipelines/ dbfs:/dlt_src_bronze_vk/pipelines/
+       - databricks pipelines create --settings dlt_src_bronze/pipelines/dlt_src_bronze.json >> install.log
+       - . ./environment_vars.sh
+       - echo $DLT_SRC_BRONZE_ID
+       - echo $DLT_SRC_BRONZE_SCHEDULE
+       - databricks pipelines stop --pipeline-id $DLT_SRC_BRONZE_ID
+       - dbx deploy dlt-src-bronze-vk --environment=training
+  post_build:
+    commands:
+      - echo post_build completed on `date`
+      - echo databricks host is $DATABRICKS_HOST

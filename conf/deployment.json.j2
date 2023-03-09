@@ -1,0 +1,273 @@
+{
+  "custom": {% include 'includes/custom_cluster_props.json.j2' %},
+  "environments": {
+    "training": {
+      "workflows": [
+        {
+          "name": "dlt-pipelines-existing-cluster",
+          "run_name": "dlt-pipelines-existing-cluster",
+          "tasks": [
+            {
+              "task_key": "{{ env.PIPELINE_ID }}",
+              "existing_cluster_id": "0906-034150-yb3dcvzn",
+              "spark_python_task": {
+                "python_file": "file://tests/unit/test_training_task1.py"
+              }
+            }
+          ]
+        },
+         {
+          "name": "dlt-pipelines-new-cluster-python",
+          "run_name": "dlt-pipelines-new-cluster-python",
+          "job_clusters": [
+            {
+                "job_cluster_key": "dlt-pipelines-new-cluster-python-cluster",
+                "new_cluster": {% include 'includes/job_clusters.json.j2' %}
+            }
+          ],
+          "format": "MULTI_TASK",
+          "tasks": [
+            {
+              "task_key": "task1-python",
+              "job_cluster_key": "dlt-pipelines-new-cluster-python-cluster",
+              "spark_python_task": {
+                "python_file": "file://tests/unit/test_training_task1.py"
+              }
+            },
+            {
+              "task_key": "task2-python",
+              "job_cluster_key": "dlt-pipelines-new-cluster-python-cluster",
+              "spark_python_task": {
+                "python_file": "file://tests/unit/test_training_task2.py"
+              },
+              "depends_on": [
+                {
+                  "task_key": "task1-python"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "dlt-pipelines-new-cluster-notebook",
+          "run_name": "dlt-pipelines-new-cluster-notebook",
+          "job_clusters": [
+            {
+                "job_cluster_key": "dlt-pipelines-new-cluster-notebook-cluster",
+                "new_cluster": {% include 'includes/job_clusters.json.j2' %}
+            }
+          ],
+          "format": "MULTI_TASK",
+          "tasks": [
+            {
+              "task_key": "task1-notebook",
+              "job_cluster_key": "dlt-pipelines-new-cluster-notebook-cluster",
+              "notebook_task": {
+                "notebook_path": "/Users/jason.nam@versent.com.au/test2",
+                "source": "WORKSPACE"
+              }
+            },
+            {
+              "task_key": "task2-notebook",
+              "job_cluster_key": "dlt-pipelines-new-cluster-notebook-cluster",
+              "notebook_task": {
+                "notebook_path": "/Users/jason.nam@versent.com.au/test3",
+                "source": "WORKSPACE"
+              },
+              "depends_on": [
+                {
+                  "task_key": "task1-notebook"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "dlt-nonstream-t1",
+          "run_name": "dlt-nonstream-t1",
+          "schedule": {
+            "quartz_cron_expression": "{{ env.DLT_NONSTREAM_T1_SCHEDULE }}",
+            "timezone_id": "UTC",
+            "pause_status": "UNPAUSED"
+          },
+          "tasks": [
+            {
+              "task_key": "dlt-nonstream-t1",
+              "pipeline_task": {
+                    "pipeline_id": "{{ env.DLT_NONSTREAM_T1_ID }}",
+                    "full_refresh": "false"
+                },
+                "timeout_seconds": 0,
+                "email_notifications": {}
+            }
+          ]
+        },
+        {
+          "name": "dlt-nonstream-t2",
+          "run_name": "dlt-nonstream-t2",
+          "schedule": {
+            "quartz_cron_expression": "{{ env.DLT_NONSTREAM_T2_SCHEDULE }}",
+            "timezone_id": "UTC",
+            "pause_status": "UNPAUSED"
+          },
+          "tasks": [
+            {
+              "task_key": "dlt-nonstream-t2",
+              "pipeline_task": {
+                    "pipeline_id": "{{ env.DLT_NONSTREAM_T2_ID }}",
+                    "full_refresh": "false"
+                },
+                "timeout_seconds": 0,
+                "email_notifications": {}
+            }
+          ]
+        },
+        {
+          "name": "dlt-src-bronze",
+          "run_name": "dlt-src-bronze",
+          "job_clusters": [
+            {
+                "job_cluster_key": "dlt-src-bronze-cluster",
+                "new_cluster": {% include 'includes/job_clusters.json.j2' %}
+            }
+          ],
+          "format": "MULTI_TASK",
+          "schedule": {
+            "quartz_cron_expression": "{{ env.DLT_SRC_BRONZE_SCHEDULE }}",
+            "timezone_id": "UTC",
+            "pause_status": "UNPAUSED"
+          },
+          "tasks": [
+            {
+              "task_key": "dlt-src-bronze-init",
+              "job_cluster_key": "dlt-src-bronze-cluster",
+              "notebook_task": {
+                "notebook_path": "/Shared/dlt_src_bronze/notebooks/sourceMetaData",
+                "source": "WORKSPACE"
+              }
+            },
+            {
+              "task_key": "dlt-src-bronze",
+              "pipeline_task": {
+                    "pipeline_id": "{{ env.DLT_SRC_BRONZE_ID }}",
+                    "full_refresh": "false"
+                },
+                "timeout_seconds": 0,
+                "email_notifications": {},
+                "depends_on": [
+                {
+                  "task_key": "dlt-src-bronze-init"
+                }
+              ]
+            },
+            {
+              "task_key": "create-uc-views",
+              "job_cluster_key": "dlt-src-bronze-cluster",
+              "notebook_task": {
+                "notebook_path": "/Shared/dlt_src_bronze/notebooks/createUCViews",
+                "source": "WORKSPACE"
+              },
+              "depends_on": [
+                {
+                  "task_key": "dlt-src-bronze"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "dlt-src-bronze2",
+          "run_name": "dlt-src-bronze2",
+          "job_clusters": [
+            {
+                "job_cluster_key": "dlt-src-bronze-cluster",
+                "new_cluster": {% include 'includes/job_clusters.json.j2' %}
+            }
+          ],
+          "format": "MULTI_TASK",
+          "schedule": {
+            "quartz_cron_expression": "{{ env.DLT_SRC_BRONZE_SCHEDULE }}",
+            "timezone_id": "UTC",
+            "pause_status": "UNPAUSED"
+          },
+          "tasks": [
+            {
+              "task_key": "dlt-src-bronze",
+              "deployment_config": {
+                "no_package": true
+              },
+              "pipeline_task": {
+                    "pipeline_id": "{{ env.DLT_SRC_BRONZE_ID }}",
+                    "full_refresh": "false"
+                },
+                "timeout_seconds": 0,
+                "email_notifications": {}
+            },
+            {
+              "task_key": "create-uc-views",
+              "deployment_config": {
+                "no_package": true
+              },
+              "job_cluster_key": "dlt-src-bronze-cluster",
+              "notebook_task": {
+                "notebook_path": "/Shared/dlt_src_bronze/notebooks/createUCViews",
+                "source": "WORKSPACE"
+              },
+              "depends_on": [
+                {
+                  "task_key": "dlt-src-bronze"
+                }
+              ]
+            }
+          ]
+        },
+		{
+          "name": "dlt-src-bronze-vk",
+          "run_name": "dlt-src-bronze-vk",
+          "job_clusters": [
+            {
+                "job_cluster_key": "dlt_src_bronze_cluster_vk",
+                "new_cluster": {% include 'includes/job_clusters.json.j2' %}
+            }
+          ],
+          "format": "MULTI_TASK",
+          "schedule": {
+            "quartz_cron_expression": "{{ env.DLT_SRC_BRONZE_SCHEDULE }}",
+            "timezone_id": "UTC",
+            "pause_status": "UNPAUSED"
+          },
+          "tasks": [
+            {
+              "task_key": "dlt_src_bronze_vk",
+              "deployment_config": {
+                "no_package": true
+              },
+              "pipeline_task": {
+                    "pipeline_id": "{{ env.DLT_SRC_BRONZE_ID }}",
+                    "full_refresh": "false"
+                },
+                "timeout_seconds": 0,
+                "email_notifications": {}
+            },
+			{
+              "task_key": "dlt_src_silver_vk",
+              "deployment_config": {
+                "no_package": true
+              },
+              "job_cluster_key": "dlt_src_bronze_cluster_vk",
+              "notebook_task": {
+              "notebook_path": "/Shared/dlt_src_bronze_vk/notebooks/SilverDlt",
+                "source": "WORKSPACE"
+              },
+              "depends_on": [
+                {
+                  "task_key": "dlt_src_bronze_vk"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
