@@ -1,0 +1,48 @@
+{
+  "tables": [
+    {
+      "table_name": "EMPLOYEES_DMS",
+      "table_schema": "HR",
+      "table_comment": null,
+      "table_type": null,
+      "table_remote_source": null,
+      "table_remote_db": null,
+      "table_remote_owner": null,
+      "table_remote_table": null,
+      "primary_keys": ["EMPLOYEE_ID"],
+      "unique_keys": ["EMPLOYEE_ID"],
+      "foreign_keys": [],
+      "partition_keys": [],
+      "columns": [
+        {
+          "column_name": "EMPLOYEE_ID",
+          "column_id": 1,
+          "column_comment": "Primary key of employees table",
+          "nulls_allowed": "False",
+          "data_type": "NUMBER",
+          "data_length": 6,
+          "data_precision": 6,
+          "column_store_data_type_name": null,
+          "generated_always_as": null,
+          "remote_column_name": null,
+          "data_scale": null,
+          "character_set_name": null,
+          "char_length": 0,
+          "column_distinct_values": null,
+          "column_density": null,
+          "column_min_value": null,
+          "column_max_value": null
+        }
+      ],
+      "resource_tags": {
+        "ring_fencing_clasification": "awaiting-ring-fencing-assessment",
+        "security_classification": "not-yet-classified",
+        "information_domain": "not-yet-classified",
+        "subject_area": "not-yet-classified",
+        "information_set": "not-yet-classified"
+      },
+      "table_rows_at_scraping": null
+    }
+  ],
+  "object_dependencies": []
+}

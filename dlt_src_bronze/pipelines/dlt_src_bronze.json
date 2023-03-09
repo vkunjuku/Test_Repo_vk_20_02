@@ -1,0 +1,50 @@
+{
+    
+    "clusters": [
+        {
+            "label": "default",
+            "aws_attributes": {
+                "instance_profile_arn": "arn:aws:iam::099423962904:instance-profile/instance-profile-databricks-shared-S3"
+            },
+            "node_type_id": "m5d.large",
+            "driver_node_type_id": "m5d.large",
+            "custom_tags": {
+                "work_type": "projects_work",
+                "work_name": "EQL"
+            },
+            "policy_id": "D061EEE039000946",
+            "autoscale": {
+                "min_workers": 1,
+                "max_workers": 2,
+                "mode": "LEGACY"
+            }
+        },
+        {
+            "label": "maintenance",
+            "policy_id": "D061EEE039000946"
+        }
+    ],
+    "development": true,
+    "continuous": false,
+    "channel": "CURRENT",
+    "edition": "ADVANCED",
+    "photon": true,
+    "libraries": [
+        {
+            "notebook": {
+                "path": "/Shared/dlt_src_bronze_vk/notebooks/bronzeDlt"
+            }
+        },
+        {
+            "notebook": {
+                "path": "/Shared/dlt_src_bronze_vk/notebooks/SilverDlt"
+            }
+        }
+    ],
+    "name": "dlt_src_bronze_pipeline_vk",
+    "storage": "s3://databricks-raw-bucket/code_pipeline_test/test/bronze/tables/",
+    "configuration": {
+        "pipelines.clusterShutdown.delay": "60s"
+    },
+    "target": "dlt_bronze_config_test"
+}
